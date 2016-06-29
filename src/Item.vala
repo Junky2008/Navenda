@@ -8,11 +8,12 @@ public class Item
 	private Vector2 Location;
 	private Gtk.Label ItemTitle;
 	private Gtk.Label ItemSubText;
+	private SelectedItemManager SelectedItem;
 
-	public Item(int id, string name, string filename, Gtk.Layout layout, Vector2 size)
+	public Item(string name, string filename, Gtk.Layout layout, Vector2 size, SelectedItemManager selectedItem)
 	{
-		Id = id;
 		Name = name;
+		SelectedItem = selectedItem;
 		Filename = filename;
 		Layout = layout;
 		Size = size;
@@ -24,33 +25,41 @@ public class Item
 
 		layout.add(ItemTitle);
 		layout.add(ItemSubText);
+	}
 
-		calculateLocation();
-		draw();
+	public string getSubText()
+	{
+		return Filename;
+	}
+
+	public void setId(int id)
+	{
+		Id = id;
 	}
 
 	public void calculateLocation()
 	{
+		int id = Id - SelectedItem.getSelected();
 		ItemSubText.set_opacity(0);
-		if(Id > 1)
+		if(id > 1)
 		{
-			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (Id * 150) + 150);
+			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (id * 150) + 150);
 		}
-		else if(Id == 1)
+		else if(id == 1)
 		{
-			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (Id * 150));
-		ItemSubText.set_opacity(1);
+			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (id * 150));
+			ItemSubText.set_opacity(1);
 		}
 		else
 		{
-			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (Id * 150) - 150);
+			Location = new Vector2((size.getX() / 5) + 20, (size.getY() / 6) + (id * 150) - 150);
 		}
 	}
 
 	public void draw()
 	{
-		Layout.move(ItemTitle, Location.getX(), Location.getY());
-		Layout.move(ItemSubText, Location.getX(), Location.getY() + 75);
+		Layout.move(ItemTitle, (int)Location.getX(), (int)Location.getY());
+		Layout.move(ItemSubText, (int)Location.getX(), (int)Location.getY() + 75);
 	}
 
 	public void hide()
@@ -61,23 +70,16 @@ public class Item
 
 	public void show()
 	{
+		int id = Id - SelectedItem.getSelected();
 		ItemTitle.set_opacity(1);
-		if(Id == 1)
+		if(id == 1)
 		{
 			ItemSubText.set_opacity(1);
 		}
 	}
 
-	public void idUp()
+	public void update()
 	{
-		Id++;
-		calculateLocation();
-		draw();
-	}
-
-	public void idDown()
-	{
-		Id--;
 		calculateLocation();
 		draw();
 	}

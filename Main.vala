@@ -1,27 +1,30 @@
 GLib.List<Column> columns;
 Gtk.Layout layout;
 Vector2 size;
+SelectedItemManager selectedColumn;
+MovementManager movementManager;
 
 int main(string[] args)
 {
 	Gtk.init(ref args);
 
-	var builder = new Gtk.Builder();
-
+	selectedColumn = new SelectedItemManager();
+	movementManager = new MovementManager();
 	try
 	{
-		/* Getting the glade file */
-		builder.add_from_file("../src/MainWindow.glade");
+		unowned Thread<void*> movementThread = Thread.create<void*> (movementManager.run, true);
 	}
-	catch(GLib.Error e)
+	catch (ThreadError e)
 	{
-		Gtk.main_quit();
+        	stderr.printf ("%s\n", e.message);
+		return 1;
 	}
-	builder.connect_signals(null);
 
-	var window = builder.get_object("MainWindow") as Gtk.Window;
+	var window = new Gtk.Window();
 	window.destroy.connect(Gtk.main_quit);
-	layout = builder.get_object("MainLayout") as Gtk.Layout;
+	layout = new Gtk.Layout();
+
+	window.add(layout);
 
 	window.show_all();
         window.fullscreen();
@@ -32,9 +35,9 @@ int main(string[] args)
         stdout.printf("height: %d, width: %d\n", defaultScreen.get_height(), defaultScreen.get_width());
 	size = new Vector2(defaultScreen.get_height(), defaultScreen.get_width());
 
-	columns.append(new Column(1, "Videos", layout, size));
-	columns.append(new Column(2, "Music", layout, size));
-	columns.append(new Column(3, "Pictures", layout, size));
+	addColumn(new Column("Videos", layout, size, selectedColumn, movementManager));
+	addColumn(new Column("Music", layout, size, selectedColumn, movementManager));
+	addColumn(new Column("Pictures", layout, size, selectedColumn, movementManager));
 
 	new Style(window);
 
@@ -45,16 +48,17 @@ int main(string[] args)
 	return 0;
 }
 
+void addColumn(Column column)
+{
+	column.setId((int)columns.length() + 1);
+	selectedColumn.setMax((int)columns.length());
+	columns.append(column);
+	column.update();
+}
+
 Column getActiveColumn()
 {
-	for(int i = 0; i < columns.length(); i++)
-	{
-		if(columns.nth_data(i).getId() == 1)
-		{
-			return columns.nth_data(i);
-		}
-	}
-	return null;
+	return columns.nth_data(selectedColumn.getSelected());
 }
 
 bool on_key_pressed (Gtk.Widget source, Gdk.EventKey key)
@@ -63,35 +67,36 @@ bool on_key_pressed (Gtk.Widget source, Gdk.EventKey key)
         {
             Gtk.main_quit ();
         }
-        if (key.str == "d")
+        else if (key.str == "d")
         {
-		for(int i = 0; i < columns.length(); i++)
-		{
-			columns.nth_data(i).idDown();
-		}
+        	selectedColumn.next();
         }
         else if (key.str == "a")
         {
-		for(int i = 0; i < columns.length(); i++)
-		{
-			columns.nth_data(i).idUp();
-		}
+        	selectedColumn.previous();
         }
         else if (key.str == "s")
         {
-        	var activeColumn = getActiveColumn();
-        	if(activeColumn != null)
-        	{
-        		activeColumn.itemIdDown();
-        	}
+        	getActiveColumn().next();
         }
         else if (key.str == "w")
         {
-        	var activeColumn = getActiveColumn();
-        	if(activeColumn != null)
-        	{
-        		activeColumn.itemIdUp();
-        	}
+        	getActiveColumn().previous();
+        }
+        else if (key.str == "f")
+        {
+        	Item activeItem = getActiveColumn().getActiveItem();
+        	stdout.printf("Active ItemText = %s\n", activeItem.getSubText());
+        }
+        else
+        {
+        	stdout.printf("Key %s pressed\n", key.str);
+        }
+
+
+        for(int i = 0; i < columns.length(); i++)
+        {
+        	columns.nth_data(i).update();
         }
 
         return false;

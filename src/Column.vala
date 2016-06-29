@@ -6,12 +6,19 @@ public class Column
 	private Gtk.Label ItemHeader;
 	private Vector2 Location;
 	private Vector2 Size;
+	private SelectedItemManager SelectedColumn;
+	private SelectedItemManager SelectedItem;
+	private MovementManager MovementManager;
 
-	public Column(int id, string name, Gtk.Layout layout, Vector2 size)
+	public Column(string name, Gtk.Layout layout, Vector2 size, SelectedItemManager selectedColumn, MovementManager movementManager)
 	{
-		setId(id);
+		Id = 0;
+		MovementManager = movementManager;
+		SelectedColumn = selectedColumn;
+		SelectedItem = new SelectedItemManager();
 		Name = name;
 		Size = size;
+		Location = new Vector2(0, 0);
 		ItemHeader = new Gtk.Label(name);
 		ItemHeader.get_style_context().add_class("HeaderLabel");
 		var user = GLib.Environment.get_variable("USER");
@@ -23,13 +30,11 @@ public class Column
 		try
 		{
 			d = GLib.Dir.open(path);
-			var itemId = 1;
                         while ( ( name = d.read_name( ) ) != null )
                         {
                             string file = GLib.Path.build_filename( path, name );
                             stdout.printf ("file: %s\n", file);
-                            Items.append(new Item(itemId, name, file, layout, size));
-                            itemId++;
+                            addItem(new Item(name, file, layout, size, SelectedItem));
                         }
 		}
 		catch(GLib.FileError e)
@@ -38,38 +43,46 @@ public class Column
 		}
 
 		layout.add(ItemHeader);
-		Location = new Vector2((Size.getX() / 5) * Id, (Size.getY() / 6));
-		draw();
+		update();
 	}
 
-	public void idUp()
+	public void addItem(Item item)
 	{
-		Id++;
-		Location.set((Size.getX() / 5) * Id, (Size.getY() / 6));
-		draw();
+		item.setId((int)Items.length() + 1);
+		SelectedItem.setMax((int)Items.length());
+		Items.append(item);
+		item.update();
 	}
 
-	public void idDown()
+	public void calculateLocation()
 	{
-		Id--;
-		Location.set((Size.getX() / 5) * Id, (Size.getY() / 6));
+		int id = Id - selectedColumn.getSelected();
+		Location.set((Size.getX() / 5) * id, (Size.getY() / 6));
+	}
+
+	public void update()
+	{
 		draw();
 	}
 
-	public void itemIdUp()
+	public void updateItems()
 	{
 		for(int i = 0; i < Items.length(); i++)
 		{
-			Items.nth_data(i).idUp();
+			Items.nth_data(i).update();
 		}
 	}
 
-	public void itemIdDown()
+	public void next()
 	{
-		for(int i = 0; i < Items.length(); i++)
-		{
-			Items.nth_data(i).idDown();
-		}
+		SelectedItem.next();
+		updateItems();
+	}
+
+	public void previous()
+	{
+		SelectedItem.previous();
+		updateItems();
 	}
 
 	public void setId(int id)
@@ -77,22 +90,24 @@ public class Column
 		Id = id;
 	}
 
-	public int getId()
-	{
-		return Id;
-	}
-
 	public void draw()
 	{
+		var fromLocation = new Vector2(Location.getX(), Location.getY());
+		calculateLocation();
+		var targetLocation = new Vector2(Location.getX(), Location.getY());
+		int id = Id - selectedColumn.getSelected();
 		ItemHeader.get_style_context().remove_class("Selected");
-		if(Id == 1)
+		if(id == 1)
 		{
 			ItemHeader.get_style_context().add_class("Selected");
 		}
-		layout.move(ItemHeader, Location.getX(), Location.getY());
+
+		MovementManager.addMovement(new Movement(layout, ItemHeader, fromLocation, targetLocation, 500));
+		//layout.move(ItemHeader, Location.getX(), Location.getY());
+
 		for(int i = 0; i < Items.length(); i++)
 		{
-			if(Id == 1)
+			if(id == 1)
 			{
 				Items.nth_data(i).show();
 			}
@@ -103,8 +118,8 @@ public class Column
 		}
 	}
 
-	public void addItem(Item item)
+	public Item getActiveItem()
 	{
-		Items.append(item);
+		return Items.nth_data(SelectedItem.getSelected());
 	}
 }

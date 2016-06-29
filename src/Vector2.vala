@@ -1,35 +1,35 @@
 public class Vector2
 {
-	private int X;
-	private int Y;
+	private float X;
+	private float Y;
 
-	public Vector2(int x, int y)
+	public Vector2(float x, float y)
 	{
 		X = x;
 		Y = y;
 	}
 
-	public int getX()
+	public float getX()
 	{
 		return X;
 	}
 
-	public int getY()
+	public float getY()
 	{
 		return Y;
 	}
 
-	public void setX(int x)
+	public void setX(float x)
 	{
 		X = x;
 	}
 
-	public void setY(int y)
+	public void setY(float y)
 	{
 		Y = y;
 	}
 
-	public void set(int x, int y)
+	public void set(float x, float y)
 	{
 		X = x;
 		Y = y;
