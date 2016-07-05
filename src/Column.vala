@@ -19,6 +19,7 @@ public class Column
 		Name = name;
 		Size = size;
 		Location = new Vector2(0, 0);
+		//calculateLocation();
 		ItemHeader = new Gtk.Label(name);
 		ItemHeader.get_style_context().add_class("HeaderLabel");
 		var user = GLib.Environment.get_variable("USER");
@@ -43,7 +44,8 @@ public class Column
 		}
 
 		layout.add(ItemHeader);
-		update();
+		//layout.move(ItemHeader, (int)Location.getX(), (int)Location.getY());
+		//update();
 	}
 
 	public void addItem(Item item)
@@ -88,6 +90,9 @@ public class Column
 	public void setId(int id)
 	{
 		Id = id;
+		calculateLocation();
+		layout.move(ItemHeader, (int)Location.getX(), (int)Location.getY());
+		update();
 	}
 
 	public void draw()
@@ -102,8 +107,8 @@ public class Column
 			ItemHeader.get_style_context().add_class("Selected");
 		}
 
-		MovementManager.addMovement(new Movement(layout, ItemHeader, fromLocation, targetLocation, 500));
-		//layout.move(ItemHeader, Location.getX(), Location.getY());
+		MovementManager.addMovement(new Movement(layout, ItemHeader, fromLocation, targetLocation, 250));
+		//layout.move(ItemHeader, (int)Location.getX(), (int)Location.getY());
 
 		for(int i = 0; i < Items.length(); i++)
 		{
